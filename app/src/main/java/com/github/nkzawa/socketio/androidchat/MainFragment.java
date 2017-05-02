@@ -2,16 +2,20 @@ package com.github.nkzawa.socketio.androidchat;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -31,6 +35,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.support.v4.app.FragmentManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -53,6 +58,7 @@ public class MainFragment extends Fragment {
 
     private static final int TYPING_TIMER_LENGTH = 600;
 
+    private SharedPreferences prefs;
     private RecyclerView mMessagesView;
     private EditText mInputMessageView;
     private List<Message> mMessages = new ArrayList<Message>();
@@ -61,6 +67,10 @@ public class MainFragment extends Fragment {
     private Handler mTypingHandler = new Handler();
     private String mUsername;
     private Socket mSocket;
+    private Fragment taskFragment;
+    private FragmentManager fragmentManager;
+
+    BackgroundService bs;
 
     //in meters
     private int messageRange = 500;
@@ -106,6 +116,8 @@ public class MainFragment extends Fragment {
 
         ChatApplication app = (ChatApplication) getActivity().getApplication();
         mSocket = app.getSocket();
+        prefs = PreferenceManager.getDefaultSharedPreferences(
+        getActivity().getApplicationContext());
         mSocket.on(Socket.EVENT_CONNECT,onConnect);
         mSocket.on(Socket.EVENT_DISCONNECT,onDisconnect);
         mSocket.on(Socket.EVENT_CONNECT_ERROR, onConnectError);
@@ -118,6 +130,23 @@ public class MainFragment extends Fragment {
         mSocket.connect();
 
         startSignIn();
+        if (isBackgroundServiceRunning())
+        {
+            bs = new BackgroundService();
+        }
+        else
+        {
+            bs = BackgroundService.getbs();
+        }
+        fragmentManager = getFragmentManager();
+        taskFragment = (TaskFragment) fragmentManager.findFragmentByTag(TaskFragment.TAG_TASK_FRAGMENT);
+
+        if (taskFragment == null) {
+
+            taskFragment = new TaskFragment();
+            fragmentManager.beginTransaction().add(taskFragment, TaskFragment.TAG_TASK_FRAGMENT).commit();
+        }
+
     }
 
     @Override
@@ -193,6 +222,13 @@ public class MainFragment extends Fragment {
                 attemptSend();
             }
         });
+        if (bs != null)
+        {
+            ArrayList<Message> messages =  bs.getdbc().getMessages();
+            for (int i = 0; i < messages.size(); i++){
+                addMessage(messages.get(i).getUsername(), messages.get(i).getMessage());
+            }
+        }
     }
 
     @Override
@@ -205,6 +241,10 @@ public class MainFragment extends Fragment {
 
         mUsername = data.getStringExtra("username");
         int numUsers = data.getIntExtra("numUsers", 1);
+
+        SharedPreferences.Editor e = prefs.edit();
+        e.putString("username", mUsername);
+        e.commit();
 
         addLog(getResources().getString(R.string.message_welcome));
         addParticipantsLog(numUsers);
@@ -309,9 +349,14 @@ public class MainFragment extends Fragment {
     }
 
     private void startSignIn() {
-        mUsername = null;
-        Intent intent = new Intent(getActivity(), LoginActivity.class);
-        startActivityForResult(intent, REQUEST_LOGIN);
+
+        mUsername = prefs.getString("username", "");
+        if (mUsername == null)
+        {
+            Intent intent = new Intent(getActivity(), LoginActivity.class);
+            startActivityForResult(intent, REQUEST_LOGIN);
+        }
+
     }
 
     //returns true if locations are
@@ -418,6 +463,15 @@ public class MainFragment extends Fragment {
                     //TODO FOR DEBUGGGING REMOVE
                     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     addMessage(username, " is within " + messageRange + " meters: " + checkLocation(mlat,mlong));
+
+                    if (bs != null)
+                    {
+                        bs.getdbc().InsertMessage(new Message.Builder(Message.TYPE_MESSAGE)
+                                .username(username).message(message).build());
+                        bs.getdbc().InsertMessage(new Message.Builder(Message.TYPE_MESSAGE)
+                                .username(username).message(" is within " + messageRange +
+                                        " meters: " + checkLocation(mlat,mlong)).build());
+                    }
                 }
             });
         }
@@ -521,6 +575,19 @@ public class MainFragment extends Fragment {
             mSocket.emit("stop typing");
         }
     };
+
+
+    public boolean isBackgroundServiceRunning() {
+        ActivityManager manager = (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            Log.d("background_service", "Checking");
+            if (BackgroundService.class.getName().equals(service.service.getClassName())) {
+                Log.d("background_service", "BackgroundService is already running!");
+                return true;
+            }
+        }
+        return false;
+    }
 
 
 
