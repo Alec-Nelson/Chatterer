@@ -1,11 +1,18 @@
 package com.github.nkzawa.socketio.androidchat;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
@@ -55,12 +62,20 @@ public class MainFragment extends Fragment {
     private String mUsername;
     private Socket mSocket;
 
+    //in meters
+    private int messageRange = 500;
+
     private Boolean isConnected = true;
+
+    private LocationManager locationManager;
+
+//    private LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
     public MainFragment() {
         super();
     }
 
+    private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 11;
 
     // This event fires 1st, before creation of fragment or any views
     // The onAttach method is called when the Fragment instance is associated with an Activity.
@@ -68,7 +83,13 @@ public class MainFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+        if ( ContextCompat.checkSelfPermission( context, android.Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+
+            ActivityCompat.requestPermissions( this.getActivity(), new String[] {  android.Manifest.permission.ACCESS_FINE_LOCATION  },
+                    MY_PERMISSION_ACCESS_FINE_LOCATION );
+        }
         mAdapter = new MessageAdapter(context, mMessages);
+        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         if (context instanceof Activity){
             //this.listener = (MainActivity) context;
         }
@@ -77,6 +98,8 @@ public class MainFragment extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
+
         super.onCreate(savedInstanceState);
 
         setHasOptionsMenu(true);
@@ -260,13 +283,54 @@ public class MainFragment extends Fragment {
         addMessage(mUsername, message);
 
         // perform the sending message attempt.
-        mSocket.emit("new message", message);
+
+
+
+        JSONObject obj = new JSONObject();
+        try {
+            Location location = null;
+
+            try {
+                location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            } catch (SecurityException e) {
+                Log.e("PERMISSION_EXCEPTION","PERMISSION_NOT_GRANTED");
+            }
+            System.out.println("HEREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE lat is " + location.getLatitude());
+            obj.put("message",message);
+            obj.put("lat", location.getLatitude());
+            obj.put("long", location.getLongitude());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        //Create json of message, lat and long
+
+        mSocket.emit("new message", obj);
     }
 
     private void startSignIn() {
         mUsername = null;
         Intent intent = new Intent(getActivity(), LoginActivity.class);
         startActivityForResult(intent, REQUEST_LOGIN);
+    }
+
+    //returns true if locations are
+    //within range of each other
+    private boolean checkLocation(double mlat, double mlong)
+    {
+        Location location = null;
+        try {
+            location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            Location messageLocation = new Location(LocationManager.NETWORK_PROVIDER);
+            messageLocation.setLatitude(mlat);
+            messageLocation.setLongitude(mlong);
+            return location.distanceTo(messageLocation) < messageRange;
+        } catch (SecurityException e) {
+            Log.e("PERMISSION_EXCEPTION","PERMISSION_NOT_GRANTED");
+        }
+
+
+        return false;
     }
 
     private void leave() {
@@ -328,6 +392,7 @@ public class MainFragment extends Fragment {
     };
 
     private Emitter.Listener onNewMessage = new Emitter.Listener() {
+
         @Override
         public void call(final Object... args) {
             getActivity().runOnUiThread(new Runnable() {
@@ -336,16 +401,23 @@ public class MainFragment extends Fragment {
                     JSONObject data = (JSONObject) args[0];
                     String username;
                     String message;
+                    double mlat;
+                    double mlong;
                     try {
                         username = data.getString("username");
                         message = data.getString("message");
+                        mlat = data.getDouble("lat");
+                        mlong = data.getDouble("long");
                     } catch (JSONException e) {
                         Log.e(TAG, e.getMessage());
                         return;
                     }
-
                     removeTyping(username);
+                    if (checkLocation(mlat, mlong))
                     addMessage(username, message);
+                    //TODO FOR DEBUGGGING REMOVE
+                    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    addMessage(username, " is within " + messageRange + " meters: " + checkLocation(mlat,mlong));
                 }
             });
         }
@@ -449,5 +521,8 @@ public class MainFragment extends Fragment {
             mSocket.emit("stop typing");
         }
     };
+
+
+
 }
 
