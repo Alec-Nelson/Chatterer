@@ -318,6 +318,7 @@ public class MainFragment extends Fragment {
             mInputMessageView.requestFocus();
             return;
         }
+        Log.d("prefs in attemptSend", mUsername);
 
         mInputMessageView.setText("");
         addMessage(mUsername, message);
@@ -351,7 +352,7 @@ public class MainFragment extends Fragment {
     private void startSignIn() {
 
         mUsername = prefs.getString("username", "");
-        Log.d("prefs", "musername");
+        Log.d("prefs", mUsername);
         if (mUsername.equals(""))
         {
             Intent intent = new Intent(getActivity(), LoginActivity.class);
@@ -381,6 +382,9 @@ public class MainFragment extends Fragment {
 
     private void leave() {
         mUsername = null;
+        SharedPreferences.Editor e = prefs.edit();
+        e.clear();
+        e.commit();
         mSocket.disconnect();
         mSocket.connect();
         startSignIn();
@@ -397,11 +401,16 @@ public class MainFragment extends Fragment {
                 @Override
                 public void run() {
                     if(!isConnected) {
-                        if(null!=mUsername)
+                        if(null!=mUsername) {
                             mSocket.emit("add user", mUsername);
+                        }
                         Toast.makeText(getActivity().getApplicationContext(),
                                 R.string.connect, Toast.LENGTH_LONG).show();
                         isConnected = true;
+                    }
+                    else{
+
+                        mSocket.emit("add user", mUsername);
                     }
                 }
             });
@@ -415,6 +424,10 @@ public class MainFragment extends Fragment {
                 @Override
                 public void run() {
                     Log.i(TAG, "diconnected");
+                    SharedPreferences.Editor e = prefs.edit();
+                    e.clear();
+                    e.commit();
+                    mUsername = null;
                     isConnected = false;
                     Toast.makeText(getActivity().getApplicationContext(),
                             R.string.disconnect, Toast.LENGTH_LONG).show();
