@@ -37,8 +37,8 @@ public class IsUserLoggedInAsyncTask extends AsyncTask<String,Void,String> {
         String  mUsername = prefs.getString("username", "");
         if (mUsername != null){
             SharedPreferences.Editor e = prefs.edit();
-            e.putString("username", strings[0]);
-            e.commit();
+            //e.putString("username", strings[0]);
+            //e.commit();
         }
         mUsername = prefs.getString("username", "");
         return mUsername;

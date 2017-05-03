@@ -351,7 +351,8 @@ public class MainFragment extends Fragment {
     private void startSignIn() {
 
         mUsername = prefs.getString("username", "");
-        if (mUsername == null)
+        Log.d("prefs", "musername");
+        if (mUsername.equals(""))
         {
             Intent intent = new Intent(getActivity(), LoginActivity.class);
             startActivityForResult(intent, REQUEST_LOGIN);
