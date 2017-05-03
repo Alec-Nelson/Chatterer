@@ -17,11 +17,8 @@ import android.util.Log;
 public class BackgroundService extends Service{
 
 
-    // This is needed for the step count detection
-    private SensorManager mSensorManager;
-
     //SharedPreferences prefs;
-    BackgroundService bs;
+    private static BackgroundService bs;
 
     private DBController database_controller;
     //SharedPreferences.Editor editor;
@@ -73,6 +70,17 @@ public class BackgroundService extends Service{
         super.onDestroy();
     }
 
+    public static BackgroundService getbs()
+    {
+        return bs;
+    }
+
+    public DBController getdbc()
+    {
+        return database_controller;
+    }
+
+
 
 
 
@@ -91,7 +99,7 @@ public class BackgroundService extends Service{
 
             // if our action contains "TIME_TICK" we upload to the server via socket
             if (action.contains("TIME_TICK")) {
-                //Possibly get location and send location to the server here
+                database_controller.RemoveMessages();
             }
 
 

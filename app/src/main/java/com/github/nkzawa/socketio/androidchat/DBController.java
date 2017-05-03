@@ -3,8 +3,13 @@ package com.github.nkzawa.socketio.androidchat;
 import android.app.Application;
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 
 import io.socket.client.Socket;
 
@@ -74,5 +79,24 @@ public class DBController {
         id++;
 
     }
+
+    public ArrayList<Message> getMessages()
+    {
+        ArrayList<Message> messages = new ArrayList<Message>();
+
+        Cursor c = db.query(false, DBConstants.TABLE_NAME, null,
+                null,null, null, null, DBConstants.MESSAGE_NUMBER, null);
+        c.moveToFirst();
+        while (c.moveToNext())
+        {
+            String username = c.getString(c.getColumnIndex(DBConstants.USERNAME));
+            String message = c.getString(c.getColumnIndex(DBConstants.MESSAGE_TEXT));
+
+            messages.add(0, new Message.Builder(Message.TYPE_MESSAGE)
+                    .username(username).message(message).build());
+        }
+        return messages;
+    }
+
 
 }
