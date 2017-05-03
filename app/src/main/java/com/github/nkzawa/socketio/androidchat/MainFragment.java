@@ -336,10 +336,13 @@ public class MainFragment extends Fragment {
             } catch (SecurityException e) {
                 Log.e("PERMISSION_EXCEPTION","PERMISSION_NOT_GRANTED");
             }
-            System.out.println("HEREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE lat is " + location.getLatitude());
             obj.put("message",message);
+            //TO SPOOF REPLACE THIS
             obj.put("lat", location.getLatitude());
             obj.put("long", location.getLongitude());
+            //WITH THIS
+//            obj.put("lat", 54);
+//            obj.put("long", 54);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -408,8 +411,7 @@ public class MainFragment extends Fragment {
                                 R.string.connect, Toast.LENGTH_LONG).show();
                         isConnected = true;
                     }
-                    else{
-
+                    else if (mUsername != null && mUsername != ""){
                         mSocket.emit("add user", mUsername);
                     }
                 }
