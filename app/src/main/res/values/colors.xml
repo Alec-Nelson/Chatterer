@@ -14,4 +14,7 @@
     <color name="username10">#a700ff</color>
     <color name="username11">#d300e7</color>
 
+    <color name="bgLight">#fdab1e</color>
+    <color name="bgDark">#c21500</color>
+    <color name="black">#000000</color>
 </resources>

@@ -3,6 +3,11 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <!-- Customize your theme here. -->
+        <item name="colorPrimaryDark">@color/bgLight</item>
+        <item name="actionBarStyle">@style/actionBar</item>
     </style>
 
+    <style name="actionBar" parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">
+        <item name="background">@drawable/linear_gradient</item>
+    </style>
 </resources>

@@ -7,6 +7,7 @@
         android:paddingLeft="@dimen/activity_horizontal_margin"
         android:paddingRight="@dimen/activity_horizontal_margin"
         android:paddingTop="@dimen/activity_vertical_margin"
+        android:background="@drawable/radial_gradient"
         tools:context="com.github.nkzawa.socketio.androidchat.LoginActivity">
 
     <LinearLayout
@@ -26,6 +27,10 @@
                 android:inputType="textPersonName"
                 android:maxLength="14"
                 android:maxLines="1"
+                android:textColor="@color/black"
+                android:textColorHint="@color/black"
+                android:backgroundTint="@color/black"
+                android:textCursorDrawable="@null"
                 android:singleLine="true"/>
         <Button
                 android:id="@+id/sign_in_button"
@@ -34,7 +39,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="@string/action_sign_in"
-                android:textStyle="bold"/>
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:background="@drawable/ic_join_icon"/>
 
     </LinearLayout>
 </ScrollView>
