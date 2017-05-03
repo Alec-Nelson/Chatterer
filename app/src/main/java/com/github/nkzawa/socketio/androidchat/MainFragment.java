@@ -73,7 +73,7 @@ public class MainFragment extends Fragment {
     BackgroundService bs;
 
     //in meters
-    private int messageRange = 500;
+    private int messageRange = 100;
 
     private Boolean isConnected = true;
 
@@ -469,6 +469,9 @@ public class MainFragment extends Fragment {
                         message = data.getString("message");
                         mlat = data.getDouble("lat");
                         mlong = data.getDouble("long");
+//                        TODO For spoofing lat and long change these coors
+//                        mlat = 45;
+//                        mlong = 45;
                     } catch (JSONException e) {
                         Log.e(TAG, e.getMessage());
                         return;
